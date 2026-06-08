@@ -10,7 +10,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .container{max-width:720px;margin:0 auto;padding:16px}
 header{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;padding:20px 16px;text-align:center;border-radius:0 0 16px 16px;box-shadow:0 2px 8px rgba(192,57,43,.3)}
 header h1{font-size:1.4rem;margin-bottom:4px}
-header p{font-size:.85rem;opacity:.9}
+header .status{font-size:.75rem;opacity:.7;margin-top:2px}
 .mode-tabs{display:flex;gap:0;margin:16px 0;border-radius:10px;overflow:hidden;border:2px solid #c0392b}
 .mode-tab{flex:1;padding:10px 6px;text-align:center;font-size:.85rem;font-weight:600;cursor:pointer;background:#fff;color:#c0392b;border:none;transition:all .2s}
 .mode-tab.active{background:#c0392b;color:#fff}
@@ -49,10 +49,18 @@ header p{font-size:.85rem;opacity:.9}
 .btn-secondary{background:#e0e0e0;color:#333}
 .btn-submit{background:#e67e22;color:#fff;font-size:1.05rem;padding:12px 40px;margin-top:10px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.question-nav{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
-.q-dot{width:28px;height:28px;border-radius:6px;border:1px solid #ddd;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;color:#999;transition:all .15s}
+.question-nav-wrap{position:relative;margin:8px 0}
+.question-nav{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0;max-height:72px;overflow:auto;padding:2px;display:none}
+.q-dot{width:22px;height:22px;border-radius:4px;border:1px solid #ddd;font-size:.6rem;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;color:#999;transition:all .15s;user-select:none;flex-shrink:0}
 .q-dot.answered{background:#e74c3c;color:#fff;border-color:#e74c3c}
 .q-dot.current{border-color:#c0392b;border-width:2.5px;font-weight:700;color:#c0392b}
+.q-dot:hover{background:#f5f5f5}
+.nav-toggle{font-size:.75rem;color:#999;cursor:pointer;padding:2px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;display:inline-block;margin-top:2px}
+.nav-toggle:hover{color:#c0392b;border-color:#c0392b}
+.nav-expanded{max-height:none!important}
+.q-jump{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:.75rem;color:#999}
+.q-jump input{width:40px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;font-size:.75rem;text-align:center}
+.q-jump button{padding:2px 8px;border:1px solid #c0392b;border-radius:4px;background:#c0392b;color:#fff;font-size:.7rem;cursor:pointer}
 .overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:100;justify-content:center;align-items:flex-start;padding-top:40px;overflow-y:auto}
 .overlay.show{display:flex}
 .overlay-card{background:#fff;border-radius:16px;padding:30px;max-width:560px;width:92%;text-align:center;margin-bottom:40px}
@@ -71,8 +79,16 @@ header p{font-size:.85rem;opacity:.9}
 .wrong-card .wrong-info{font-size:.85rem;color:#666}
 .wrong-card .wrong-delete{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#ccc;padding:2px 6px}
 .wrong-card .wrong-delete:hover{color:#c62828}
+.resume-bar{background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:10px 16px;margin-bottom:12px;display:none;align-items:center;gap:10px;font-size:.9rem}
+.resume-bar.show{display:flex}
+.resume-bar .resume-btn{background:#e67e22;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:.85rem;cursor:pointer;font-weight:600;white-space:nowrap}
+.resume-bar .resume-dismiss{background:none;border:none;color:#999;cursor:pointer;font-size:1.1rem;padding:0 4px;margin-left:auto}
 .empty{text-align:center;padding:60px 20px;color:#999}
 .empty .big-emoji{font-size:3rem;margin-bottom:12px}
+.sync-bar{background:#e3f2fd;border:1px solid #90caf9;border-radius:10px;padding:8px 16px;margin-bottom:12px;display:none;align-items:center;gap:10px;font-size:.85rem}
+.sync-bar.show{display:flex}
+.sync-bar .sync-spin{display:inline-block;width:14px;height:14px;border:2px solid #90caf9;border-top-color:#1976d2;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 footer{text-align:center;padding:24px;color:#aaa;font-size:.8rem}
 </style>
 </head>
@@ -80,22 +96,36 @@ footer{text-align:center;padding:24px;color:#aaa;font-size:.8rem}
 <header>
 <h1>📚 马克思主义基本原理刷题</h1>
 <p id="headerSub">539 题在手，马原无忧</p>
+<p class="status" id="connStatus">🟡 检查连接...</p>
 </header>
 <div class="container">
+<div class="sync-bar" id="syncBar">
+<div class="sync-spin" id="syncSpin"></div>
+<span id="syncMsg">正在同步题库数据...</span>
+</div>
+
 <div class="mode-tabs">
-<button class="mode-tab active" id="tabStudy" onclick="switchMode('study')">📖 背题</button>
+<button class="mode-tab active" id="tabStudy" onclick="switchMode('shua')">📖 刷题</button>
 <button class="mode-tab" id="tabTest" onclick="switchMode('test')">📝 测试</button>
+<button class="mode-tab" id="tabBrowse" onclick="switchMode('browse')">📋 浏览</button>
 <button class="mode-tab" id="tabWrong" onclick="switchMode('wrong')">❌ 错题本<span class="wrong-badge" id="wrongCount"></span></button>
+</div>
+
+<div class="resume-bar" id="resumeBar">
+<span>💾 检测到上次刷题进度</span>
+<button class="resume-btn" onclick="resumeStudy()">继续刷题</button>
+<button class="resume-dismiss" onclick="dismissResume()">✕</button>
 </div>
 
 <div id="studyControls">
 <div class="toolbar">
-<select id="studyFilter">
+<select id="studyFilter" onchange="onStudyFilterChange()">
 <option value="all">全部题目</option>
 <option value="single">仅单选题</option>
 <option value="multi">仅多选题</option>
 </select>
-<button onclick="loadStudy()">🔄 加载题库</button>
+<button onclick="loadStudy(true)">🔄 重新开始</button>
+<button class="danger" onclick="clearStudyProgress()" style="font-size:.8rem;padding:6px 12px">清除进度</button>
 <span class="score" id="studyScore">✅ 0 / 0</span>
 </div>
 </div>
@@ -112,16 +142,35 @@ footer{text-align:center;padding:24px;color:#aaa;font-size:.8rem}
 </div>
 </div>
 
+<div id="browseControls" style="display:none">
+<div class="toolbar">
+<select id="browseFilter">
+<option value="all">全部题目</option>
+<option value="single">仅单选题</option>
+<option value="multi">仅多选题</option>
+</select>
+<button onclick="loadBrowse()">🔄 加载</button>
+<span class="score" id="browseInfo"></span>
+</div>
+</div>
+
 <div id="wrongControls" style="display:none">
 <div class="toolbar">
 <button onclick="retestWrong()">🔄 重刷错题</button>
 <button class="danger" onclick="clearWrongBook()">🗑 清空错题本</button>
+<button onclick="syncData()" style="font-size:.8rem">🔄 同步数据</button>
 <span class="score" id="wrongInfo"></span>
 </div>
 </div>
 
 <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-<div class="question-nav" id="questionNav" style="display:none"></div>
+<div class="question-nav-wrap">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span class="nav-toggle" id="navToggle" onclick="toggleNav()">☰ 展开全部</span>
+<span class="q-jump">跳转 <input type="number" id="jumpInput" min="1" placeholder="题号" onkeydown="if(event.key==='Enter')doJump()"> <button onclick="doJump()">GO</button></span>
+</div>
+<div class="question-nav" id="questionNav"></div>
+</div>
 <div id="questionArea"></div>
 <div class="btn-group" id="navButtons" style="display:none">
 <button class="btn btn-secondary" onclick="prevQuestion()">⬅ 上一题</button>
@@ -136,405 +185,635 @@ footer{text-align:center;padding:24px;color:#aaa;font-size:.8rem}
 <footer>马原刷题 · 在线练习平台</footer>
 
 <script>
-let currentMode = 'study';
-let questions = [];
-let questionIndices = [];
-let currentIdx = 0;
-let userAnswers = {};
-let checkedAnswers = {};
-let correctCount = 0;
-let totalAnswered = 0;
-let testResult = null;
-let autoAdvanceTimer = null;  // timer for auto-advance after single-choice submit
+// ============ Data Cache ============
+var ALL_DATA = null; // cached full question bank with answers
+var CACHE_KEY = 'mayuan_cache';
+var CACHE_VERSION = 1;
 
-// ============ Wrong Book (localStorage) ============
+function getCachedData() {
+ try { var d = localStorage.getItem(CACHE_KEY); return d ? JSON.parse(d) : null; } catch(e) { return null; }
+}
+function setCachedData(data) {
+ try { localStorage.setItem(CACHE_KEY, JSON.stringify({v:CACHE_VERSION, data:data, ts:Date.now()})); } catch(e) {}
+}
+function hasCachedData() {
+ var c = getCachedData();
+ return c && c.v === CACHE_VERSION && c.data && c.data.length > 0;
+}
+
+// ============ Network ============
+function fetchWithTimeout(url, timeout) {
+ return new Promise(function(resolve, reject) {
+  var controller = new AbortController();
+  var timer = setTimeout(function() { controller.abort(); reject(new Error('timeout')); }, timeout || 15000);
+  fetch(url, {signal:controller.signal}).then(function(r) {
+   clearTimeout(timer);
+   if (!r.ok) reject(new Error('HTTP '+r.status));
+   else resolve(r.json());
+  }).catch(function(e) { clearTimeout(timer); reject(e); });
+ });
+}
+
+async function syncData(force) {
+ if (!force && hasCachedData()) {
+  ALL_DATA = getCachedData().data;
+  document.getElementById('connStatus').innerHTML = '🟢 本地缓存';
+  return true;
+ }
+ 
+ document.getElementById('syncBar').classList.add('show');
+ document.getElementById('syncMsg').textContent = '正在连接服务器...';
+ document.getElementById('connStatus').innerHTML = '🟡 同步中...';
+ 
+ try {
+  var data = await fetchWithTimeout('/api/browse?mode=all', 30000);
+  ALL_DATA = data.questions;
+  setCachedData(ALL_DATA);
+  document.getElementById('syncBar').classList.remove('show');
+  document.getElementById('connStatus').innerHTML = '🟢 已同步 ' + ALL_DATA.length + ' 题';
+  return true;
+ } catch(e) {
+  document.getElementById('syncBar').classList.remove('show');
+  // Try cache fallback
+  if (hasCachedData()) {
+   ALL_DATA = getCachedData().data;
+   document.getElementById('connStatus').innerHTML = '🟠 离线模式（缓存数据）';
+   return true;
+  }
+  document.getElementById('connStatus').innerHTML = '🔴 加载失败，请刷新重试';
+  return false;
+ }
+}
+
+// Filter data locally
+function filterData(mode) {
+ var result = [];
+ for (var i = 0; i < ALL_DATA.length; i++) {
+  var q = ALL_DATA[i];
+  if (mode === 'single' && q.type !== 'single') continue;
+  if (mode === 'multi' && q.type !== 'multi') continue;
+  result.push(q);
+ }
+ return result;
+}
+
+function shuffleData(arr) {
+ var a = arr.slice();
+ for (var i = a.length - 1; i > 0; i--) {
+  var j = Math.floor(Math.random() * (i + 1));
+  var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+ }
+ return a;
+}
+
+// ============ Global State ============
+var currentMode = 'shua';
+var questions = [];
+var questionIndices = [];
+var currentIdx = 0;
+var userAnswers = {};
+var checkedAnswers = {};
+var correctCount = 0;
+var totalAnswered = 0;
+var testResult = null;
+var autoAdvanceTimer = null;
+
+// ============ Progress Persistence ============
+var PROGRESS_KEY = 'mayuan_study_progress';
+var _saveTimer = null;
+
+function saveStudyProgress() {
+ clearTimeout(_saveTimer);
+ _saveTimer = setTimeout(function() {
+  var p = {filter:document.getElementById('studyFilter').value, currentIdx:currentIdx,
+   questionIndices:questionIndices, userAnswers:userAnswers, checkedAnswers:checkedAnswers,
+   correctCount:correctCount, totalAnswered:totalAnswered, ts:Date.now()};
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch(e) {}
+ }, 200);
+}
+
+function loadStudyProgress() {
+ try { var r = localStorage.getItem(PROGRESS_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+}
+function clearStudyProgress() { localStorage.removeItem(PROGRESS_KEY); document.getElementById('resumeBar').classList.remove('show'); }
+function dismissResume() { document.getElementById('resumeBar').classList.remove('show'); }
+function onStudyFilterChange() { clearStudyProgress(); }
+
+function checkResume() {
+ var p = loadStudyProgress();
+ if (p && p.questionIndices && p.questionIndices.length > 0 && p.filter === document.getElementById('studyFilter').value)
+  document.getElementById('resumeBar').classList.add('show');
+}
+
+async function resumeStudy() {
+ var p = loadStudyProgress();
+ if (!p) return;
+ document.getElementById('resumeBar').classList.remove('show');
+ document.getElementById('studyFilter').value = p.filter;
+ await loadStudy(false, p);
+}
+
+// ============ Wrong Book ============
 function getWrongBook() {
-    try { return JSON.parse(localStorage.getItem('mayuan_wrong') || '[]'); }
-    catch(e) { return []; }
+ try { return JSON.parse(localStorage.getItem('mayuan_wrong') || '[]'); } catch(e) { return []; }
 }
 function saveWrongBook(wb) { localStorage.setItem('mayuan_wrong', JSON.stringify(wb)); }
 function addToWrongBook(qData, userAns, correctAns) {
-    const wb = getWrongBook();
-    const exists = wb.some(w => w.question === qData.question);
-    if (!exists) {
-        wb.unshift({ question: qData.question, options: qData.options, answer: correctAns, wrongCount: 1 });
-    } else {
-        wb.forEach(w => { if (w.question === qData.question) w.wrongCount = (w.wrongCount||1)+1; });
-    }
-    saveWrongBook(wb);
-    updateWrongBadge();
+ var wb = getWrongBook();
+ for (var i = 0; i < wb.length; i++) {
+  if (wb[i].question === qData.question) { wb[i].wrongCount = (wb[i].wrongCount||1)+1; saveWrongBook(wb); updateWrongBadge(); return; }
+ }
+ wb.unshift({question:qData.question, options:qData.options, answer:correctAns, wrongCount:1});
+ saveWrongBook(wb); updateWrongBadge();
 }
 function removeFromWrongBook(idx) {
-    const wb = getWrongBook(); wb.splice(idx, 1); saveWrongBook(wb); updateWrongBadge();
-    if (currentMode === 'wrong') renderWrongBook();
+ var wb = getWrongBook(); wb.splice(idx, 1); saveWrongBook(wb); updateWrongBadge();
+ if (currentMode === 'wrong') renderWrongBook();
 }
 function clearWrongBook() {
-    if (!confirm('确定清空所有错题记录吗？')) return;
-    saveWrongBook([]); updateWrongBadge();
-    if (currentMode === 'wrong') renderWrongBook();
+ if (!confirm('确定清空所有错题记录吗？')) return;
+ saveWrongBook([]); updateWrongBadge();
+ if (currentMode === 'wrong') renderWrongBook();
 }
 function updateWrongBadge() {
-    const cnt = getWrongBook().length;
-    const el = document.getElementById('wrongCount');
-    el.textContent = cnt > 0 ? cnt : '';
-    el.style.display = cnt > 0 ? 'inline' : 'none';
+ var cnt = getWrongBook().length;
+ var el = document.getElementById('wrongCount');
+ el.textContent = cnt > 0 ? cnt : '';
+ el.style.display = cnt > 0 ? 'inline' : 'none';
 }
 
 // ============ Mode Switch ============
 function switchMode(mode) {
-    clearTimeout(autoAdvanceTimer);
-    currentMode = mode;
-    document.querySelectorAll('.mode-tab').forEach((t,i) => t.classList.toggle('active', i === ['study','test','wrong'].indexOf(mode)));
-    ['studyControls','testControls','wrongControls'].forEach(id => document.getElementById(id).style.display = 'none');
-    document.getElementById(mode === 'study' ? 'studyControls' : mode === 'test' ? 'testControls' : 'wrongControls').style.display = 'block';
-    document.getElementById('questionNav').style.display = mode === 'test' ? 'flex' : 'none';
-    resetState();
-    document.getElementById('navButtons').style.display = 'none';
-    document.getElementById('progressBar').style.width = '0%';
-    if (mode === 'study') loadStudy();
-    else if (mode === 'test') document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🎲</div><p>点击「随机抽100题」开始测试</p></div>';
-    else if (mode === 'wrong') renderWrongBook();
-    updateWrongBadge();
+ clearTimeout(autoAdvanceTimer);
+ currentMode = mode;
+ var tabs = document.querySelectorAll('.mode-tab');
+ var modes = ['shua','test','browse','wrong'];
+ for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', modes[i] === mode);
+ document.getElementById('studyControls').style.display = mode === 'shua' ? 'block' : 'none';
+ document.getElementById('testControls').style.display = mode === 'test' ? 'block' : 'none';
+ document.getElementById('browseControls').style.display = mode === 'browse' ? 'block' : 'none';
+ document.getElementById('wrongControls').style.display = mode === 'wrong' ? 'block' : 'none';
+ document.getElementById('resumeBar').classList.remove('show');
+ resetState();
+ document.getElementById('navButtons').style.display = 'none';
+ document.getElementById('progressBar').style.width = '0%';
+ document.getElementById('questionNav').innerHTML = '';
+ document.getElementById('questionNav').style.display = 'none';
+ document.getElementById('questionArea').innerHTML = '';
+ if (mode === 'shua') loadStudy(true);
+ else if (mode === 'test') document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🎲</div><p>点击「随机抽100题」开始测试</p></div>';
+ else if (mode === 'wrong') renderWrongBook();
+ else if (mode === 'browse') document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">📋</div><p>点击「加载」浏览全部题目及答案</p></div>';
+ updateWrongBadge();
 }
 
 function resetState() {
-    clearTimeout(autoAdvanceTimer);
-    questions = []; questionIndices = []; currentIdx = 0;
-    userAnswers = {}; checkedAnswers = {}; correctCount = 0; totalAnswered = 0; testResult = null;
+ clearTimeout(autoAdvanceTimer);
+ questions = []; questionIndices = []; currentIdx = 0;
+ userAnswers = {}; checkedAnswers = {}; correctCount = 0; totalAnswered = 0; testResult = null;
 }
 
 // ============ Study Mode ============
-async function loadStudy() {
-    resetState();
-    const mode = document.getElementById('studyFilter').value;
-    const resp = await fetch(`/api/questions?mode=${mode}&shuffle=0`);
-    const data = await resp.json();
-    questions = data.questions;
-    questionIndices = questions.map(q => q._idx);
-    document.getElementById('studyScore').textContent = '✅ 0 / 0';
-    document.getElementById('headerSub').textContent = `背题模式 · ${data.total} 题`;
-    if (questions.length === 0) {
-        document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>暂无题目</h2></div>';
-        document.getElementById('navButtons').style.display = 'none';
-    } else {
-        renderStudy();
-        document.getElementById('navButtons').style.display = 'flex';
-    }
-    updateProgress();
+async function loadStudy(fresh, savedProgress) {
+ if (fresh && !savedProgress) checkResume();
+
+ var mode = document.getElementById('studyFilter').value;
+ questions = filterData(mode);
+ questionIndices = questions.map(function(q) { return q._idx; });
+
+ if (savedProgress && savedProgress.questionIndices && savedProgress.questionIndices.length === questionIndices.length) {
+  currentIdx = savedProgress.currentIdx || 0;
+  userAnswers = savedProgress.userAnswers || {};
+  checkedAnswers = savedProgress.checkedAnswers || {};
+  correctCount = savedProgress.correctCount || 0;
+  totalAnswered = savedProgress.totalAnswered || 0;
+ } else if (!savedProgress) {
+  currentIdx = 0; userAnswers = {}; checkedAnswers = {}; correctCount = 0; totalAnswered = 0;
+ }
+
+ document.getElementById('studyScore').textContent = '✅ ' + correctCount + ' / ' + totalAnswered;
+ document.getElementById('headerSub').textContent = '刷题模式 · ' + questions.length + ' 题';
+ document.getElementById('questionNav').style.display = 'flex';
+
+ if (questions.length === 0) {
+  document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>暂无题目</h2></div>';
+  document.getElementById('navButtons').style.display = 'none';
+  document.getElementById('questionNav').style.display = 'none';
+ } else {
+  renderStudy();
+  document.getElementById('navButtons').style.display = 'flex';
+ }
+ updateProgress();
 }
 
 function renderStudy() {
-    if (questions.length === 0) return;
-    const q = questions[currentIdx];
-    const key = currentIdx;
-    const done = checkedAnswers[key];
-    const correctAns = done ? (checkedAnswers[key + '_ans'] || '') : '';
-    const isMulti = q.type === 'multi';
+ if (questions.length === 0) return;
+ var q = questions[currentIdx];
+ var key = currentIdx;
+ var done = checkedAnswers[key];
+ var correctAns = done ? (checkedAnswers[key + '_ans'] || '') : '';
+ var isMulti = q.type === 'multi';
 
-    let optionsHtml = q.options.map((opt, oi) => {
-        const letter = String.fromCharCode(65 + oi);
-        const userAns = userAnswers[key] || [];
-        const isSelected = userAns.includes(letter);
-        let cls = 'option';
-        if (isSelected) cls += ' selected';
-        if (done) {
-            if (correctAns.includes(letter)) cls += ' correct';
-            else if (isSelected) cls += ' wrong';
-        }
-        return `<label class="${cls}">
-            <input type="${isMulti ? 'checkbox' : 'radio'}" name="study_opt_${key}" value="${letter}" ${isSelected?'checked':''} ${done?'disabled':''} onclick="studySelect(event,${oi})">
-            <span>${opt}</span>
-        </label>`;
-    }).join('');
+ var optionsHtml = '';
+ for (var oi = 0; oi < q.options.length; oi++) {
+  var letter = String.fromCharCode(65 + oi);
+  var userAns = userAnswers[key] || [];
+  var isSelected = userAns.indexOf(letter) >= 0;
+  var cls = 'option';
+  if (isSelected) cls += ' selected';
+  if (done) {
+   if (correctAns.indexOf(letter) >= 0) cls += ' correct';
+   else if (isSelected) cls += ' wrong';
+  }
+  optionsHtml += '<label class="' + cls + '"><input type="' + (isMulti?'checkbox':'radio') +
+   '" name="study_opt_' + key + '" value="' + letter + '"' +
+   (isSelected?' checked':'') + (done?' disabled':'') +
+   ' onclick="studySelect(event,' + oi + ')"><span>' + q.options[oi] + '</span></label>';
+ }
 
-    let resultHtml = '';
-    if (done) {
-        const uSorted = [...(userAnswers[key]||[])].sort().join('');
-        const cSorted = [...correctAns.replace(/\s/g,'')].sort().join('');
-        const ok = uSorted === cSorted;
-        resultHtml = `<div class="result show ${ok?'correct':'wrong'}">
-            ${ok ? '✅ 回答正确！' : '❌ 回答错误！'} 正确答案：${correctAns}
-        </div>`;
-    }
+ var resultHtml = '';
+ if (done) {
+  var uSorted = (userAnswers[key]||[]).slice().sort().join('');
+  var cSorted = correctAns.replace(/\s/g,'').split('').sort().join('');
+  var ok = uSorted === cSorted;
+  resultHtml = '<div class="result show ' + (ok?'correct':'wrong') + '">' +
+   (ok?'✅ 回答正确！':'❌ 回答错误！') + ' 正确答案：' + correctAns + '</div>';
+ }
 
-    const tagHtml = isMulti
-        ? '<span class="q-tag tag-multi">多选</span>'
-        : '<span class="q-tag tag-single">单选（点击即判）</span>';
+ var tagHtml = isMulti ? '<span class="q-tag tag-multi">多选</span>' : '<span class="q-tag tag-single">单选（点击即判）</span>';
+ var submitBtn = '';
+ if (!done && isMulti) {
+  submitBtn = '<div class="btn-group"><button class="btn btn-primary" onclick="studySubmit()"' +
+   ((userAnswers[key]||[]).length===0?' disabled':'') + '>提交查看答案</button></div>';
+ }
 
-    document.getElementById('questionArea').innerHTML = `
-    <div class="card">
-        <div class="q-header">
-            <span class="q-num">第 ${currentIdx+1} / ${questions.length} 题</span>
-            ${tagHtml}
-        </div>
-        <div class="q-text">${q.question}</div>
-        <div class="options">${optionsHtml}</div>
-        ${resultHtml}
-        ${done ? '' : (isMulti ? `<div class="btn-group"><button class="btn btn-primary" onclick="studySubmit()" ${(userAnswers[key]||[]).length===0?'disabled':''}>提交查看答案</button></div>` : '')}
-    </div>`;
+ document.getElementById('questionArea').innerHTML =
+  '<div class="card"><div class="q-header"><span class="q-num">第 ' + (currentIdx+1) +
+  ' / ' + questions.length + ' 题</span>' + tagHtml + '</div><div class="q-text">' +
+  q.question + '</div><div class="options">' + optionsHtml + '</div>' + resultHtml + submitBtn + '</div>';
+ renderStudyNav();
 }
 
 function studySelect(event, oi) {
-    const key = currentIdx;
-    if (checkedAnswers[key]) return;
-    const q = questions[currentIdx];
-    const letter = String.fromCharCode(65 + oi);
-    const isMulti = q.type === 'multi';
+ var key = currentIdx;
+ if (checkedAnswers[key]) return;
+ var q = questions[currentIdx];
+ var letter = String.fromCharCode(65 + oi);
+ var isMulti = q.type === 'multi';
 
-    if (isMulti) {
-        if (!userAnswers[key]) userAnswers[key] = [];
-        if (event.target.checked) {
-            if (!userAnswers[key].includes(letter)) userAnswers[key].push(letter);
-        } else {
-            userAnswers[key] = userAnswers[key].filter(l => l !== letter);
-        }
-        renderStudy();
-    } else {
-        // Single choice: select this, deselect others, auto-submit
-        userAnswers[key] = [letter];
-        renderStudy();
-        // Small delay so user sees their selection, then auto-submit
-        clearTimeout(autoAdvanceTimer);
-        autoAdvanceTimer = setTimeout(() => studySubmit(), 100);
-    }
+ if (isMulti) {
+  if (!userAnswers[key]) userAnswers[key] = [];
+  if (event.target.checked) { if (userAnswers[key].indexOf(letter) < 0) userAnswers[key].push(letter); }
+  else { userAnswers[key] = userAnswers[key].filter(function(l) { return l !== letter; }); }
+  renderStudy(); saveStudyProgress();
+ } else {
+  userAnswers[key] = [letter];
+  renderStudy(); saveStudyProgress();
+  clearTimeout(autoAdvanceTimer);
+  studySubmit();
+ }
 }
 
-async function studySubmit() {
-    const key = currentIdx;
-    if (!userAnswers[key] || userAnswers[key].length === 0) return;
-    if (checkedAnswers[key]) return;  // already submitted
-    const origIdx = questionIndices[key];
-    const resp = await fetch(`/api/check/${origIdx}`);
-    const data = await resp.json();
-    checkedAnswers[key] = true;
-    checkedAnswers[key + '_ans'] = data.answer;
-    const uSorted = [...userAnswers[key]].sort().join('');
-    const cSorted = [...data.answer.replace(/\s/g,'')].sort().join('');
-    const isCorrect = uSorted === cSorted;
-    if (isCorrect) correctCount++;
-    else addToWrongBook(questions[key], uSorted, data.answer);
-    totalAnswered++;
-    document.getElementById('studyScore').textContent = `✅ ${correctCount} / ${totalAnswered}`;
-    updateProgress();
-    renderStudy();
-    // Auto-advance only on correct answer
-    if (isCorrect && currentIdx < questions.length - 1) {
-        clearTimeout(autoAdvanceTimer);
-        autoAdvanceTimer = setTimeout(() => {
-            currentIdx++;
-            renderStudy();
-            updateProgress();
-            window.scrollTo({top:0,behavior:"smooth"});
-        }, 600);
-    }
+function studySubmit() {
+ var key = currentIdx;
+ if (!userAnswers[key] || userAnswers[key].length === 0) return;
+ if (checkedAnswers[key]) return;
+ // Use cached answer data (no server call)
+ var q = questions[currentIdx];
+ checkedAnswers[key] = true;
+ checkedAnswers[key + '_ans'] = q.answer;
+ var uSorted = userAnswers[key].slice().sort().join('');
+ var cSorted = q.answer.replace(/\s/g,'').split('').sort().join('');
+ var isCorrect = uSorted === cSorted;
+ if (isCorrect) correctCount++;
+ else addToWrongBook(q, uSorted, q.answer);
+ totalAnswered++;
+ document.getElementById('studyScore').textContent = '✅ ' + correctCount + ' / ' + totalAnswered;
+ updateProgress(); saveStudyProgress(); renderStudy();
+ if (isCorrect && currentIdx < questions.length - 1) {
+  clearTimeout(autoAdvanceTimer);
+  autoAdvanceTimer = setTimeout(function() {
+   currentIdx++; saveStudyProgress(); renderStudy(); updateProgress();
+  }, 300);
+ }
+}
+
+// ============ Study Nav ============
+function renderStudyNav() {
+ var html = '';
+ for (var i = 0; i < questions.length; i++) {
+  var cls = '';
+  if (i === currentIdx) cls += ' current';
+  if (checkedAnswers[i]) cls += ' answered';
+  html += '<div class="q-dot' + cls + '" onclick="jumpTo(' + i + ')">' + (i+1) + '</div>';
+ }
+ document.getElementById('questionNav').innerHTML = html;
+ setTimeout(function() {
+  var cur = document.querySelector('.q-dot.current');
+  if (cur) cur.scrollIntoView({block:'nearest',behavior:'smooth'});
+ }, 50);
 }
 
 // ============ Test Mode ============
-async function loadTest() {
-    resetState();
-    const mode = document.getElementById('testFilter').value;
-    const resp = await fetch(`/api/test?mode=${mode}`);
-    const data = await resp.json();
-    questions = data.questions;
-    questionIndices = questions.map(q => q._idx);
-    document.getElementById('submitTestBtn').disabled = false;
-    document.getElementById('headerSub').textContent = `测试模式 · ${data.total} 题`;
-    document.getElementById('questionNav').style.display = 'flex';
-    if (questions.length === 0) {
-        document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>暂无题目</h2></div>';
-        document.getElementById('navButtons').style.display = 'none';
-        document.getElementById('questionNav').style.display = 'none';
-    } else {
-        renderTest(); renderNav();
-        document.getElementById('navButtons').style.display = 'flex';
-    }
-    updateProgress();
+function loadTest() {
+ resetState();
+ var mode = document.getElementById('testFilter').value;
+ var pool = filterData(mode);
+ var count = Math.min(100, pool.length);
+ pool = shuffleData(pool);
+ questions = pool.slice(0, count);
+ questionIndices = questions.map(function(q) { return q._idx; });
+ document.getElementById('submitTestBtn').disabled = false;
+ document.getElementById('headerSub').textContent = '测试模式 · ' + questions.length + ' 题';
+ document.getElementById('questionNav').style.display = 'flex';
+ if (questions.length === 0) {
+  document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>暂无题目</h2></div>';
+  document.getElementById('navButtons').style.display = 'none';
+  document.getElementById('questionNav').style.display = 'none';
+ } else {
+  renderTest(); renderNav();
+  document.getElementById('navButtons').style.display = 'flex';
+ }
+ updateProgress();
 }
 
 function renderTest() {
-    if (questions.length === 0) return;
-    const q = questions[currentIdx];
-    const key = currentIdx;
-    let optionsHtml = q.options.map((opt, oi) => {
-        const letter = String.fromCharCode(65 + oi);
-        const userAns = userAnswers[key] || [];
-        const isSelected = userAns.includes(letter);
-        return `<label class="option${isSelected?' selected':''}">
-            <input type="checkbox" value="${letter}" ${isSelected?'checked':''} onclick="testSelect(event,${oi})">
-            <span>${opt}</span>
-        </label>`;
-    }).join('');
-    document.getElementById('questionArea').innerHTML = `
-    <div class="card">
-        <div class="q-header"><span class="q-num">第 ${currentIdx+1} / ${questions.length} 题</span></div>
-        <div class="q-text">${q.question}</div>
-        <div class="options">${optionsHtml}</div>
-    </div>`;
-    renderNav();
+ if (questions.length === 0) return;
+ var q = questions[currentIdx];
+ var key = currentIdx;
+ var optionsHtml = '';
+ for (var oi = 0; oi < q.options.length; oi++) {
+  var letter = String.fromCharCode(65 + oi);
+  var userAns = userAnswers[key] || [];
+  var isSelected = userAns.indexOf(letter) >= 0;
+  optionsHtml += '<label class="option' + (isSelected?' selected':'') + '">' +
+   '<input type="checkbox" value="' + letter + '"' + (isSelected?' checked':'') +
+   ' onclick="testSelect(event,' + oi + ')"><span>' + q.options[oi] + '</span></label>';
+ }
+ document.getElementById('questionArea').innerHTML =
+  '<div class="card"><div class="q-header"><span class="q-num">第 ' + (currentIdx+1) +
+  ' / ' + questions.length + ' 题</span></div><div class="q-text">' +
+  q.question + '</div><div class="options">' + optionsHtml + '</div></div>';
+ renderNav();
 }
 
 function testSelect(event, oi) {
-    const key = currentIdx;
-    const letter = String.fromCharCode(65 + oi);
-    if (!userAnswers[key]) userAnswers[key] = [];
-    if (event.target.checked) { if (!userAnswers[key].includes(letter)) userAnswers[key].push(letter); }
-    else { userAnswers[key] = userAnswers[key].filter(l => l !== letter); }
-    renderNav(); updateProgress();
+ var key = currentIdx;
+ var letter = String.fromCharCode(65 + oi);
+ if (!userAnswers[key]) userAnswers[key] = [];
+ if (event.target.checked) { if (userAnswers[key].indexOf(letter) < 0) userAnswers[key].push(letter); }
+ else { userAnswers[key] = userAnswers[key].filter(function(l) { return l !== letter; }); }
+ renderNav(); updateProgress();
 }
 
 function renderNav() {
-    let html = '';
-    for (let i = 0; i < questions.length; i++) {
-        let cls = ''; if (i === currentIdx) cls += ' current';
-        if (userAnswers[i] && userAnswers[i].length > 0) cls += ' answered';
-        html += `<div class="q-dot${cls}" onclick="jumpTo(${i})">${i+1}</div>`;
-    }
-    document.getElementById('questionNav').innerHTML = html;
+ var html = '';
+ for (var i = 0; i < questions.length; i++) {
+  var cls = '';
+  if (i === currentIdx) cls += ' current';
+  if (userAnswers[i] && userAnswers[i].length > 0) cls += ' answered';
+  html += '<div class="q-dot' + cls + '" onclick="jumpTo(' + i + ')">' + (i+1) + '</div>';
+ }
+ document.getElementById('questionNav').innerHTML = html;
+ setTimeout(function() {
+  var cur = document.querySelector('.q-dot.current');
+  if (cur) cur.scrollIntoView({block:'nearest',behavior:'smooth'});
+ }, 50);
 }
 
-function jumpTo(idx) { currentIdx = idx; renderTest(); window.scrollTo({top:0,behavior:'smooth'}); }
+function jumpTo(idx) {
+ currentIdx = idx;
+ if (currentMode === 'shua') { renderStudy(); saveStudyProgress(); }
+ else renderTest();
+}
 
-async function submitTest() {
-    const answered = Object.keys(userAnswers).filter(k => userAnswers[k] && userAnswers[k].length > 0).length;
-    if (answered < questions.length) {
-        if (!confirm(`还有 ${questions.length - answered} 题未作答，确定交卷吗？`)) return;
-    }
-    document.getElementById('submitTestBtn').disabled = true;
-    document.getElementById('submitTestBtn').textContent = '⏳ 判卷中...';
-    const payload = { answers: {}, indices: questionIndices };
-    for (let i = 0; i < questions.length; i++) {
-        if (userAnswers[i] && userAnswers[i].length > 0) payload.answers[i] = userAnswers[i].sort().join('');
-    }
-    const resp = await fetch('/api/grade', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    testResult = await resp.json();
-    testResult.details.forEach(d => {
-        if (!d.is_correct) addToWrongBook({question:d.question, options:d.options}, d.user_answer, d.correct_answer);
-    });
-    document.getElementById('headerSub').textContent = `测试结果: ${testResult.correct}/${testResult.total} (${testResult.score}分)`;
-    showResult();
+function submitTest() {
+ var answered = 0;
+ for (var k in userAnswers) { if (userAnswers[k] && userAnswers[k].length > 0) answered++; }
+ if (answered < questions.length) {
+  if (!confirm('还有 ' + (questions.length-answered) + ' 题未作答，确定交卷吗？')) return;
+ }
+ document.getElementById('submitTestBtn').disabled = true;
+ document.getElementById('submitTestBtn').textContent = '⏳ 判卷中...';
+
+ // Grade locally using cached answers
+ var correct = 0;
+ var details = [];
+ for (var i = 0; i < questions.length; i++) {
+  var q = questions[i];
+  var userAns = (userAnswers[i]||[]).slice().sort().join('');
+  var correctAns = q.answer.replace(/\s/g,'').split('').sort().join('');
+  var userSorted = userAns.split('').sort().join('');
+  var isCorrect = userSorted === correctAns;
+  if (isCorrect) correct++;
+  details.push({
+   index:i, user_answer:userAns, correct_answer:q.answer, is_correct:isCorrect,
+   question:q.question, options:q.options
+  });
+  if (!isCorrect) addToWrongBook(q, userAns, q.answer);
+ }
+
+ testResult = {total:questions.length, correct:correct, score:Math.round(correct/questions.length*1000)/10, details:details};
+ document.getElementById('headerSub').textContent = '测试结果: ' + correct + '/' + questions.length + ' (' + testResult.score + '分)';
+ showResult();
 }
 
 function showResult() {
-    if (!testResult) return;
-    const r = testResult;
-    const gradeColor = r.score >= 90 ? '#2e7d32' : r.score >= 60 ? '#e67e22' : '#c62828';
-    let reviewHtml = r.details.map((d, i) => `
-        <div class="review-item">
-            <div class="ri-q"><b>${i+1}.</b> ${d.question}</div>
-            <div class="ri-ans">
-                你的答案: <b>${d.user_answer || '未作答'}</b> &nbsp;|&nbsp;
-                正确答案: <b>${d.correct_answer}</b> &nbsp;
-                <span class="${d.is_correct ? 'ri-correct' : 'ri-wrong'}">${d.is_correct ? '✅' : '❌'}</span>
-            </div>
-        </div>`).join('');
-    document.getElementById('resultContent').innerHTML = `
-        <h2>📊 测试成绩</h2>
-        <div class="big-score" style="color:${gradeColor}">${r.score} 分</div>
-        <div class="score-label">${r.correct} / ${r.total} 题正确</div>
-        <div class="review-section">
-            <h3 style="margin-bottom:8px">📋 答题详情</h3>${reviewHtml}
-        </div>
-        <div class="btn-group" style="justify-content:center;margin-top:16px">
-            <button class="btn btn-primary" onclick="closeResult()">关闭</button>
-            <button class="btn btn-secondary" onclick="closeResult();loadTest();">🔄 再来一套</button>
-        </div>`;
-    document.getElementById('resultOverlay').classList.add('show');
+ if (!testResult) return;
+ var r = testResult;
+ var gradeColor = r.score >= 90 ? '#2e7d32' : r.score >= 60 ? '#e67e22' : '#c62828';
+ var reviewHtml = '';
+ for (var i = 0; i < r.details.length; i++) {
+  var d = r.details[i];
+  reviewHtml += '<div class="review-item"><div class="ri-q"><b>' + (i+1) + '.</b> ' + d.question +
+   '</div><div class="ri-ans">你的答案: <b>' + (d.user_answer||'未作答') +
+   '</b> | 正确答案: <b>' + d.correct_answer + '</b> ' +
+   '<span class="' + (d.is_correct?'ri-correct':'ri-wrong') + '">' + (d.is_correct?'✅':'❌') + '</span></div></div>';
+ }
+ document.getElementById('resultContent').innerHTML =
+  '<h2>📊 测试成绩</h2><div class="big-score" style="color:' + gradeColor + '">' + r.score +
+  ' 分</div><div class="score-label">' + r.correct + ' / ' + r.total + ' 题正确</div>' +
+  '<div class="review-section"><h3 style="margin-bottom:8px">📋 答题详情</h3>' + reviewHtml +
+  '</div><div class="btn-group" style="justify-content:center;margin-top:16px">' +
+  '<button class="btn btn-primary" onclick="closeResult()">关闭</button>' +
+  '<button class="btn btn-secondary" onclick="closeResult();loadTest();">🔄 再来一套</button></div>';
+ document.getElementById('resultOverlay').classList.add('show');
 }
 
 function closeResult() {
-    document.getElementById('resultOverlay').classList.remove('show');
-    document.getElementById('submitTestBtn').disabled = false;
-    document.getElementById('submitTestBtn').textContent = '📮 交卷';
+ document.getElementById('resultOverlay').classList.remove('show');
+ document.getElementById('submitTestBtn').disabled = false;
+ document.getElementById('submitTestBtn').textContent = '📮 交卷';
+}
+
+// ============ Browse Mode ============
+function loadBrowse() {
+ document.getElementById('navButtons').style.display = 'none';
+ document.getElementById('questionNav').style.display = 'none';
+ document.getElementById('progressBar').style.width = '0%';
+ document.getElementById('questionArea').innerHTML = '<div class="empty"><p>⏳ 加载中...</p></div>';
+
+ var mode = document.getElementById('browseFilter').value;
+ var qs = filterData(mode);
+ document.getElementById('browseInfo').textContent = '共 ' + qs.length + ' 题';
+ document.getElementById('headerSub').textContent = '浏览模式 · ' + qs.length + ' 题';
+ document.getElementById('questionArea').innerHTML = '';
+
+ var idx = 0;
+ var BATCH = 15;
+ function renderBatch() {
+  var html = '';
+  var end = Math.min(idx + BATCH, qs.length);
+  for (var i = idx; i < end; i++) {
+   var q = qs[i];
+   var ans = q.answer;
+   var isMulti = q.type === 'multi';
+   var tag = isMulti ? '<span class="q-tag tag-multi">多选</span>' : '<span class="q-tag tag-single">单选</span>';
+   var optsHtml = '';
+   for (var oi = 0; oi < q.options.length; oi++) {
+    var letter = String.fromCharCode(65 + oi);
+    var isCorrect = ans.indexOf(letter) >= 0;
+    optsHtml += '<div class="option' + (isCorrect?' correct':'') + '" style="cursor:default">' +
+     '<span style="font-weight:600;color:' + (isCorrect?'#2e7d32':'#999') + '">' + letter + '.</span>' +
+     '<span>' + q.options[oi].replace(/^[A-H][、.．)\\s]+/, '') + '</span></div>';
+   }
+   html += '<div class="card"><div class="q-header"><span class="q-num">' + (i+1) + ' / ' + qs.length +
+    '</span>' + tag + '</div><div class="q-text">' + q.question +
+    '</div><div class="options">' + optsHtml +
+    '</div><div class="result show correct">✅ 正确答案：' + ans + '</div></div>';
+  }
+  document.getElementById('questionArea').insertAdjacentHTML('beforeend', html);
+  idx = end;
+  document.getElementById('browseInfo').textContent = '共 ' + qs.length + ' 题 | 已渲染 ' + idx;
+  if (idx < qs.length) setTimeout(renderBatch, 0);
+  else document.getElementById('browseInfo').textContent = '共 ' + qs.length + ' 题';
+ }
+ setTimeout(renderBatch, 0);
 }
 
 // ============ Wrong Book Mode ============
 function renderWrongBook() {
-    const wb = getWrongBook();
-    document.getElementById('wrongInfo').textContent = `共 ${wb.length} 道错题`;
-    document.getElementById('navButtons').style.display = 'none';
-    document.getElementById('progressBar').style.width = '0%';
-    if (wb.length === 0) {
-        document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🎉</div><h2>错题本为空</h2><p>继续刷题吧，答错的题会自动收录</p></div>';
-        return;
-    }
-    let html = '';
-    wb.forEach((w, i) => {
-        html += `<div class="wrong-card">
-            <button class="wrong-delete" onclick="removeFromWrongBook(${i})" title="移除">✕</button>
-            <div class="wrong-num">错题 #${i+1} · 错误 ${w.wrongCount||1} 次</div>
-            <div class="wrong-q">${w.question}</div>
-            <div class="wrong-info">✅ 正确答案：<b>${w.answer}</b></div>
-        </div>`;
-    });
-    document.getElementById('questionArea').innerHTML = html;
+ var wb = getWrongBook();
+ document.getElementById('wrongInfo').textContent = '共 ' + wb.length + ' 道错题';
+ document.getElementById('navButtons').style.display = 'none';
+ document.getElementById('progressBar').style.width = '0%';
+ document.getElementById('questionNav').innerHTML = '';
+ document.getElementById('questionNav').style.display = 'none';
+ if (wb.length === 0) {
+  document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🎉</div><h2>错题本为空</h2><p>继续刷题吧，答错的题会自动收录</p></div>';
+  return;
+ }
+ var html = '';
+ for (var i = 0; i < wb.length; i++) {
+  html += '<div class="wrong-card"><button class="wrong-delete" onclick="removeFromWrongBook(' + i +
+   ')" title="移除">✕</button><div class="wrong-num">错题 #' + (i+1) + ' · 错误 ' +
+   (wb[i].wrongCount||1) + ' 次</div><div class="wrong-q">' + wb[i].question +
+   '</div><div class="wrong-info">✅ 正确答案：<b>' + wb[i].answer + '</b></div></div>';
+ }
+ document.getElementById('questionArea').innerHTML = html;
 }
 
 function retestWrong() {
-    const wb = getWrongBook();
-    if (wb.length === 0) { alert('错题本为空！'); return; }
-    resetState();
-    currentMode = 'test';
-    document.querySelectorAll('.mode-tab').forEach((t,i) => t.classList.toggle('active', i === 1));
-    ['studyControls','wrongControls'].forEach(id => document.getElementById(id).style.display = 'none');
-    document.getElementById('testControls').style.display = 'block';
-    document.getElementById('testFilter').value = 'all';
-    questions = wb.map(w => ({ question: w.question, options: w.options }));
-    fetch('/api/questions?mode=all&shuffle=0').then(r => r.json()).then(data => {
-        const allQs = data.questions;
-        const found = [];
-        wb.forEach(w => {
-            const match = allQs.find(aq => aq.question === w.question);
-            if (match) found.push(match);
-        });
-        questions = found.map(q => ({ question: q.question, options: q.options }));
-        questionIndices = found.map(q => q._idx);
-        document.getElementById('submitTestBtn').disabled = false;
-        document.getElementById('headerSub').textContent = `错题重刷 · ${found.length} 题`;
-        document.getElementById('questionNav').style.display = 'flex';
-        if (found.length === 0) {
-            document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>无法匹配错题</h2></div>';
-            document.getElementById('navButtons').style.display = 'none';
-        } else {
-            renderTest(); renderNav();
-            document.getElementById('navButtons').style.display = 'flex';
-        }
-        updateProgress();
-    });
+ var wb = getWrongBook();
+ if (wb.length === 0) { alert('错题本为空！'); return; }
+ resetState();
+ currentMode = 'test';
+ document.querySelectorAll('.mode-tab').forEach(function(t,i) { t.classList.toggle('active', i === 1); });
+ document.getElementById('studyControls').style.display = 'none';
+ document.getElementById('browseControls').style.display = 'none';
+ document.getElementById('wrongControls').style.display = 'none';
+ document.getElementById('testControls').style.display = 'block';
+ document.getElementById('testFilter').value = 'all';
+
+ // Match wrong book questions to cached data
+ var found = [];
+ for (var w = 0; w < wb.length; w++) {
+  for (var a = 0; a < ALL_DATA.length; a++) {
+   if (ALL_DATA[a].question === wb[w].question) { found.push(ALL_DATA[a]); break; }
+  }
+ }
+ questions = found;
+ questionIndices = found.map(function(q) { return q._idx; });
+ document.getElementById('submitTestBtn').disabled = false;
+ document.getElementById('headerSub').textContent = '错题重刷 · ' + found.length + ' 题';
+ document.getElementById('questionNav').style.display = 'flex';
+ if (found.length === 0) {
+  document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>无法匹配错题</h2></div>';
+  document.getElementById('navButtons').style.display = 'none';
+ } else {
+  renderTest(); renderNav();
+  document.getElementById('navButtons').style.display = 'flex';
+ }
+ updateProgress();
 }
 
 // ============ Navigation ============
 function nextQuestion() {
-    if (currentIdx < questions.length - 1) {
-        clearTimeout(autoAdvanceTimer);
-        currentIdx++;
-        if (currentMode === 'study') renderStudy(); else renderTest();
-        updateProgress(); window.scrollTo({top:0,behavior:'smooth'});
-    }
+ if (currentIdx < questions.length - 1) {
+  clearTimeout(autoAdvanceTimer);
+  currentIdx++;
+  if (currentMode === 'shua') { renderStudy(); saveStudyProgress(); }
+  else renderTest();
+  updateProgress();
+ }
 }
 function prevQuestion() {
-    if (currentIdx > 0) {
-        clearTimeout(autoAdvanceTimer);
-        currentIdx--;
-        if (currentMode === 'study') renderStudy(); else renderTest();
-        updateProgress(); window.scrollTo({top:0,behavior:'smooth'});
-    }
+ if (currentIdx > 0) {
+  clearTimeout(autoAdvanceTimer);
+  currentIdx--;
+  if (currentMode === 'shua') { renderStudy(); saveStudyProgress(); }
+  else renderTest();
+  updateProgress();
+ }
 }
 function updateProgress() {
-    if (questions.length === 0) { document.getElementById('progressBar').style.width='0%'; return; }
-    let pct;
-    if (currentMode === 'study') pct = totalAnswered / questions.length * 100;
-    else { const a = Object.values(userAnswers).filter(v => v && v.length > 0).length; pct = a / questions.length * 100; }
-    document.getElementById('progressBar').style.width = pct + '%';
+ if (questions.length === 0) { document.getElementById('progressBar').style.width = '0%'; return; }
+ var pct;
+ if (currentMode === 'shua') pct = totalAnswered / questions.length * 100;
+ else {
+  var a = 0;
+  for (var k in userAnswers) { if (userAnswers[k] && userAnswers[k].length > 0) a++; }
+  pct = a / questions.length * 100;
+ }
+ document.getElementById('progressBar').style.width = pct + '%';
 }
 
-document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight') { e.preventDefault(); nextQuestion(); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); prevQuestion(); }
-    if (e.key === 'Escape') closeResult();
+function toggleNav() {
+ var nav = document.getElementById('questionNav');
+ var btn = document.getElementById('navToggle');
+ if (nav.classList.contains('nav-expanded')) {
+  nav.classList.remove('nav-expanded'); btn.textContent = '☰ 展开全部'; nav.scrollTop = 0;
+ } else {
+  nav.classList.add('nav-expanded'); btn.textContent = '✕ 收起';
+ }
+}
+function doJump() {
+ var inp = document.getElementById('jumpInput');
+ var num = parseInt(inp.value);
+ if (isNaN(num) || num < 1 || num > questions.length) { alert('请输入 1-' + questions.length); return; }
+ jumpTo(num - 1); inp.value = '';
+ document.getElementById('questionNav').classList.remove('nav-expanded');
+ document.getElementById('navToggle').textContent = '☰ 展开全部';
+}
+
+document.addEventListener('keydown', function(e) {
+ if (e.key === 'ArrowRight') { e.preventDefault(); nextQuestion(); }
+ if (e.key === 'ArrowLeft') { e.preventDefault(); prevQuestion(); }
+ if (e.key === 'Escape') closeResult();
 });
 
-updateWrongBadge();
-loadStudy();
+// ============ Init ============
+async function init() {
+ var ok = await syncData(false);
+ if (!ok) {
+  document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🔴</div><h2>无法加载题库</h2><p>请检查网络连接后刷新页面重试</p><p style="margin-top:12px"><button class="btn btn-primary" onclick="location.reload()">刷新重试</button></p></div>';
+  return;
+ }
+ updateWrongBadge();
+ loadStudy(true);
+}
+
+init();
 </script>
 </body>
 </html>

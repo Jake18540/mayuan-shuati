@@ -1,8 +1,10 @@
 import json
 import random
 from flask import Flask, render_template, jsonify, request
+from flask_compress import Compress
 
 app = Flask(__name__)
+Compress(app)
 
 with open('questions.json', 'r', encoding='utf-8') as f:
     ALL_QUESTIONS = json.load(f)
@@ -13,7 +15,6 @@ def index():
 
 @app.route('/api/questions')
 def get_questions():
-    """背题模式：返回全部题目，附带类型标记"""
     mode = request.args.get('mode', 'all')
     qs = []
     for i, q in enumerate(ALL_QUESTIONS):
@@ -22,21 +23,15 @@ def get_questions():
         if mode == 'multi' and len(q['answer']) == 1:
             continue
         qs.append({
-            '_idx': i,
-            'question': q['question'],
-            'options': q['options'],
+            '_idx': i, 'question': q['question'], 'options': q['options'],
             'type': 'single' if len(q['answer']) == 1 else 'multi'
         })
-    
-    shuffle = request.args.get('shuffle', '0')
-    if shuffle == '1':
+    if request.args.get('shuffle', '0') == '1':
         random.shuffle(qs)
-    
     return jsonify({'total': len(qs), 'questions': qs})
 
 @app.route('/api/test')
 def get_test():
-    """测试模式：随机抽100题，附带类型标记"""
     mode = request.args.get('mode', 'all')
     pool = []
     for i, q in enumerate(ALL_QUESTIONS):
@@ -45,37 +40,43 @@ def get_test():
         if mode == 'multi' and len(q['answer']) == 1:
             continue
         pool.append({
-            '_idx': i,
-            'question': q['question'],
-            'options': q['options'],
+            '_idx': i, 'question': q['question'], 'options': q['options'],
             'type': 'single' if len(q['answer']) == 1 else 'multi'
         })
-    
     count = min(100, len(pool))
     selected = random.sample(pool, count)
     random.shuffle(selected)
-    
     return jsonify({'total': len(selected), 'questions': selected})
+
+@app.route('/api/browse')
+def browse():
+    mode = request.args.get('mode', 'all')
+    qs = []
+    for i, q in enumerate(ALL_QUESTIONS):
+        if mode == 'single' and len(q['answer']) != 1:
+            continue
+        if mode == 'multi' and len(q['answer']) == 1:
+            continue
+        qs.append({
+            '_idx': i, 'question': q['question'], 'options': q['options'],
+            'answer': q['answer'],
+            'type': 'single' if len(q['answer']) == 1 else 'multi'
+        })
+    return jsonify({'total': len(qs), 'questions': qs})
 
 @app.route('/api/check/<int:idx>')
 def check_answer(idx):
-    """获取答案"""
     if 0 <= idx < len(ALL_QUESTIONS):
-        q = ALL_QUESTIONS[idx]
-        return jsonify({'index': idx, 'answer': q['answer']})
+        return jsonify({'index': idx, 'answer': ALL_QUESTIONS[idx]['answer']})
     return jsonify({'error': 'not found'}), 404
 
 @app.route('/api/grade', methods=['POST'])
 def grade_test():
-    """批量判卷"""
     data = request.get_json()
     user_answers = data.get('answers', {})
     indices = data.get('indices', [])
-    
     correct = 0
-    total = len(indices)
     details = []
-    
     for i, orig_idx in enumerate(indices):
         if orig_idx < 0 or orig_idx >= len(ALL_QUESTIONS):
             continue
@@ -88,19 +89,12 @@ def grade_test():
         if is_correct:
             correct += 1
         details.append({
-            'index': i,
-            'user_answer': user_ans,
-            'correct_answer': correct_ans,
-            'is_correct': is_correct,
-            'question': q['question'],
-            'options': q['options']
+            'index': i, 'user_answer': user_ans, 'correct_answer': correct_ans,
+            'is_correct': is_correct, 'question': q['question'], 'options': q['options']
         })
-    
     return jsonify({
-        'total': total,
-        'correct': correct,
-        'score': round(correct / total * 100, 1) if total > 0 else 0,
-        'details': details
+        'total': len(indices), 'correct': correct,
+        'score': round(correct / len(indices) * 100, 1) if indices else 0, 'details': details
     })
 
 if __name__ == '__main__':

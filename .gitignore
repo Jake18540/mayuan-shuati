@@ -5,3 +5,5 @@ __pycache__/
 /tmp_vps*
 /vps_pass*
 /webapp/__pycache__/
+*.docx
+~*

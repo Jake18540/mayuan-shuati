@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>马原刷题</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;min-height:100vh;color:#333}
+.container{max-width:720px;margin:0 auto;padding:16px}
+header{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;padding:20px 16px;text-align:center;border-radius:0 0 16px 16px;box-shadow:0 2px 8px rgba(192,57,43,.3)}
+header h1{font-size:1.4rem;margin-bottom:4px}
+header p{font-size:.85rem;opacity:.9}
+.mode-tabs{display:flex;gap:0;margin:16px 0;border-radius:10px;overflow:hidden;border:2px solid #c0392b}
+.mode-tab{flex:1;padding:10px 6px;text-align:center;font-size:.85rem;font-weight:600;cursor:pointer;background:#fff;color:#c0392b;border:none;transition:all .2s}
+.mode-tab.active{background:#c0392b;color:#fff}
+.wrong-badge{background:#fff;color:#c0392b;font-size:.7rem;padding:1px 6px;border-radius:8px;margin-left:4px}
+.mode-tab.active .wrong-badge{background:#c0392b;color:#fff;border:1px solid #fff}
+.toolbar{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center}
+.toolbar select,.toolbar button{padding:8px 14px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;cursor:pointer;background:#fff}
+.toolbar button{background:#c0392b;color:#fff;border:none;font-weight:600}
+.toolbar button:active{opacity:.8}
+.toolbar button.danger{background:#fff;color:#c62828;border:1px solid #c62828}
+.score{font-size:.9rem;margin-left:auto;color:#666}
+.progress{height:4px;background:#e0e0e0;border-radius:2px;margin:8px 0 16px}
+.progress-bar{height:100%;background:#c0392b;border-radius:2px;transition:width .3s}
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:12px}
+.q-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.q-num{font-size:.85rem;color:#999}
+.q-tag{font-size:.75rem;padding:2px 8px;border-radius:10px;font-weight:600}
+.tag-single{background:#e8f5e9;color:#2e7d32}
+.tag-multi{background:#fff3e0;color:#e65100}
+.q-text{font-size:1.05rem;line-height:1.7;margin-bottom:18px}
+.options{display:flex;flex-direction:column;gap:8px}
+.option{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid #eee;border-radius:10px;cursor:pointer;transition:all .15s;font-size:.95rem;line-height:1.5}
+.option:hover{border-color:#c0392b;background:#fdf2f2}
+.option.selected{border-color:#c0392b;background:#fdf2f2}
+.option.correct{border-color:#2e7d32;background:#e8f5e9}
+.option.wrong{border-color:#c62828;background:#ffebee}
+.option input{margin-top:2px;accent-color:#c0392b;min-width:16px}
+.result{display:none;margin-top:14px;padding:12px 16px;border-radius:10px;font-size:.95rem}
+.result.show{display:block}
+.result.correct{background:#e8f5e9;color:#2e7d32}
+.result.wrong{background:#ffebee;color:#c62828}
+.btn-group{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{padding:10px 24px;border:none;border-radius:8px;font-size:.95rem;cursor:pointer;font-weight:600;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-primary{background:#c0392b;color:#fff}
+.btn-secondary{background:#e0e0e0;color:#333}
+.btn-submit{background:#e67e22;color:#fff;font-size:1.05rem;padding:12px 40px;margin-top:10px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.question-nav{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.q-dot{width:28px;height:28px;border-radius:6px;border:1px solid #ddd;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;color:#999;transition:all .15s}
+.q-dot.answered{background:#e74c3c;color:#fff;border-color:#e74c3c}
+.q-dot.current{border-color:#c0392b;border-width:2.5px;font-weight:700;color:#c0392b}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:100;justify-content:center;align-items:flex-start;padding-top:40px;overflow-y:auto}
+.overlay.show{display:flex}
+.overlay-card{background:#fff;border-radius:16px;padding:30px;max-width:560px;width:92%;text-align:center;margin-bottom:40px}
+.overlay-card h2{font-size:1.5rem;margin-bottom:4px}
+.overlay-card .big-score{font-size:3.5rem;font-weight:700;margin:12px 0 6px}
+.overlay-card .score-label{font-size:.9rem;color:#999;margin-bottom:16px}
+.overlay-card .review-section{text-align:left;margin-top:16px}
+.overlay-card .review-item{padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:.9rem;line-height:1.5}
+.overlay-card .review-item .ri-q{color:#333;margin-bottom:4px}
+.overlay-card .review-item .ri-ans{font-size:.85rem}
+.overlay-card .review-item .ri-correct{color:#2e7d32}
+.overlay-card .review-item .ri-wrong{color:#c62828}
+.wrong-card{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:10px;position:relative}
+.wrong-card .wrong-num{font-size:.8rem;color:#c62828;font-weight:600;margin-bottom:4px}
+.wrong-card .wrong-q{font-size:.95rem;line-height:1.6;margin-bottom:8px}
+.wrong-card .wrong-info{font-size:.85rem;color:#666}
+.wrong-card .wrong-delete{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#ccc;padding:2px 6px}
+.wrong-card .wrong-delete:hover{color:#c62828}
+.empty{text-align:center;padding:60px 20px;color:#999}
+.empty .big-emoji{font-size:3rem;margin-bottom:12px}
+footer{text-align:center;padding:24px;color:#aaa;font-size:.8rem}
+</style>
+</head>
+<body>
+<header>
+<h1>📚 马克思主义基本原理刷题</h1>
+<p id="headerSub">539 题在手，马原无忧</p>
+</header>
+<div class="container">
+<div class="mode-tabs">
+<button class="mode-tab active" id="tabStudy" onclick="switchMode('study')">📖 背题</button>
+<button class="mode-tab" id="tabTest" onclick="switchMode('test')">📝 测试</button>
+<button class="mode-tab" id="tabWrong" onclick="switchMode('wrong')">❌ 错题本<span class="wrong-badge" id="wrongCount"></span></button>
+</div>
+
+<div id="studyControls">
+<div class="toolbar">
+<select id="studyFilter">
+<option value="all">全部题目</option>
+<option value="single">仅单选题</option>
+<option value="multi">仅多选题</option>
+</select>
+<button onclick="loadStudy()">🔄 加载题库</button>
+<span class="score" id="studyScore">✅ 0 / 0</span>
+</div>
+</div>
+
+<div id="testControls" style="display:none">
+<div class="toolbar">
+<select id="testFilter">
+<option value="all">全部混抽</option>
+<option value="single">仅单选题</option>
+<option value="multi">仅多选题</option>
+</select>
+<button onclick="loadTest()">🎲 随机抽100题</button>
+<button class="btn-submit" id="submitTestBtn" onclick="submitTest()" disabled>📮 交卷</button>
+</div>
+</div>
+
+<div id="wrongControls" style="display:none">
+<div class="toolbar">
+<button onclick="retestWrong()">🔄 重刷错题</button>
+<button class="danger" onclick="clearWrongBook()">🗑 清空错题本</button>
+<span class="score" id="wrongInfo"></span>
+</div>
+</div>
+
+<div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+<div class="question-nav" id="questionNav" style="display:none"></div>
+<div id="questionArea"></div>
+<div class="btn-group" id="navButtons" style="display:none">
+<button class="btn btn-secondary" onclick="prevQuestion()">⬅ 上一题</button>
+<button class="btn btn-primary" onclick="nextQuestion()">下一题 ➡</button>
+</div>
+</div>
+
+<div class="overlay" id="resultOverlay">
+<div class="overlay-card" id="resultContent"></div>
+</div>
+
+<footer>马原刷题 · 在线练习平台</footer>
+
+<script>
+let currentMode = 'study';
+let questions = [];
+let questionIndices = [];
+let currentIdx = 0;
+let userAnswers = {};
+let checkedAnswers = {};
+let correctCount = 0;
+let totalAnswered = 0;
+let testResult = null;
+let autoAdvanceTimer = null;  // timer for auto-advance after single-choice submit
+
+// ============ Wrong Book (localStorage) ============
+function getWrongBook() {
+    try { return JSON.parse(localStorage.getItem('mayuan_wrong') || '[]'); }
+    catch(e) { return []; }
+}
+function saveWrongBook(wb) { localStorage.setItem('mayuan_wrong', JSON.stringify(wb)); }
+function addToWrongBook(qData, userAns, correctAns) {
+    const wb = getWrongBook();
+    const exists = wb.some(w => w.question === qData.question);
+    if (!exists) {
+        wb.unshift({ question: qData.question, options: qData.options, answer: correctAns, wrongCount: 1 });
+    } else {
+        wb.forEach(w => { if (w.question === qData.question) w.wrongCount = (w.wrongCount||1)+1; });
+    }
+    saveWrongBook(wb);
+    updateWrongBadge();
+}
+function removeFromWrongBook(idx) {
+    const wb = getWrongBook(); wb.splice(idx, 1); saveWrongBook(wb); updateWrongBadge();
+    if (currentMode === 'wrong') renderWrongBook();
+}
+function clearWrongBook() {
+    if (!confirm('确定清空所有错题记录吗？')) return;
+    saveWrongBook([]); updateWrongBadge();
+    if (currentMode === 'wrong') renderWrongBook();
+}
+function updateWrongBadge() {
+    const cnt = getWrongBook().length;
+    const el = document.getElementById('wrongCount');
+    el.textContent = cnt > 0 ? cnt : '';
+    el.style.display = cnt > 0 ? 'inline' : 'none';
+}
+
+// ============ Mode Switch ============
+function switchMode(mode) {
+    clearTimeout(autoAdvanceTimer);
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach((t,i) => t.classList.toggle('active', i === ['study','test','wrong'].indexOf(mode)));
+    ['studyControls','testControls','wrongControls'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById(mode === 'study' ? 'studyControls' : mode === 'test' ? 'testControls' : 'wrongControls').style.display = 'block';
+    document.getElementById('questionNav').style.display = mode === 'test' ? 'flex' : 'none';
+    resetState();
+    document.getElementById('navButtons').style.display = 'none';
+    document.getElementById('progressBar').style.width = '0%';
+    if (mode === 'study') loadStudy();
+    else if (mode === 'test') document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🎲</div><p>点击「随机抽100题」开始测试</p></div>';
+    else if (mode === 'wrong') renderWrongBook();
+    updateWrongBadge();
+}
+
+function resetState() {
+    clearTimeout(autoAdvanceTimer);
+    questions = []; questionIndices = []; currentIdx = 0;
+    userAnswers = {}; checkedAnswers = {}; correctCount = 0; totalAnswered = 0; testResult = null;
+}
+
+// ============ Study Mode ============
+async function loadStudy() {
+    resetState();
+    const mode = document.getElementById('studyFilter').value;
+    const resp = await fetch(`/api/questions?mode=${mode}&shuffle=0`);
+    const data = await resp.json();
+    questions = data.questions;
+    questionIndices = questions.map(q => q._idx);
+    document.getElementById('studyScore').textContent = '✅ 0 / 0';
+    document.getElementById('headerSub').textContent = `背题模式 · ${data.total} 题`;
+    if (questions.length === 0) {
+        document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>暂无题目</h2></div>';
+        document.getElementById('navButtons').style.display = 'none';
+    } else {
+        renderStudy();
+        document.getElementById('navButtons').style.display = 'flex';
+    }
+    updateProgress();
+}
+
+function renderStudy() {
+    if (questions.length === 0) return;
+    const q = questions[currentIdx];
+    const key = currentIdx;
+    const done = checkedAnswers[key];
+    const correctAns = done ? (checkedAnswers[key + '_ans'] || '') : '';
+    const isMulti = q.type === 'multi';
+
+    let optionsHtml = q.options.map((opt, oi) => {
+        const letter = String.fromCharCode(65 + oi);
+        const userAns = userAnswers[key] || [];
+        const isSelected = userAns.includes(letter);
+        let cls = 'option';
+        if (isSelected) cls += ' selected';
+        if (done) {
+            if (correctAns.includes(letter)) cls += ' correct';
+            else if (isSelected) cls += ' wrong';
+        }
+        return `<label class="${cls}">
+            <input type="${isMulti ? 'checkbox' : 'radio'}" name="study_opt_${key}" value="${letter}" ${isSelected?'checked':''} ${done?'disabled':''} onclick="studySelect(event,${oi})">
+            <span>${opt}</span>
+        </label>`;
+    }).join('');
+
+    let resultHtml = '';
+    if (done) {
+        const uSorted = [...(userAnswers[key]||[])].sort().join('');
+        const cSorted = [...correctAns.replace(/\s/g,'')].sort().join('');
+        const ok = uSorted === cSorted;
+        resultHtml = `<div class="result show ${ok?'correct':'wrong'}">
+            ${ok ? '✅ 回答正确！' : '❌ 回答错误！'} 正确答案：${correctAns}
+        </div>`;
+    }
+
+    const tagHtml = isMulti
+        ? '<span class="q-tag tag-multi">多选</span>'
+        : '<span class="q-tag tag-single">单选（点击即判）</span>';
+
+    document.getElementById('questionArea').innerHTML = `
+    <div class="card">
+        <div class="q-header">
+            <span class="q-num">第 ${currentIdx+1} / ${questions.length} 题</span>
+            ${tagHtml}
+        </div>
+        <div class="q-text">${q.question}</div>
+        <div class="options">${optionsHtml}</div>
+        ${resultHtml}
+        ${done ? '' : (isMulti ? `<div class="btn-group"><button class="btn btn-primary" onclick="studySubmit()" ${(userAnswers[key]||[]).length===0?'disabled':''}>提交查看答案</button></div>` : '')}
+    </div>`;
+}
+
+function studySelect(event, oi) {
+    const key = currentIdx;
+    if (checkedAnswers[key]) return;
+    const q = questions[currentIdx];
+    const letter = String.fromCharCode(65 + oi);
+    const isMulti = q.type === 'multi';
+
+    if (isMulti) {
+        if (!userAnswers[key]) userAnswers[key] = [];
+        if (event.target.checked) {
+            if (!userAnswers[key].includes(letter)) userAnswers[key].push(letter);
+        } else {
+            userAnswers[key] = userAnswers[key].filter(l => l !== letter);
+        }
+        renderStudy();
+    } else {
+        // Single choice: select this, deselect others, auto-submit
+        userAnswers[key] = [letter];
+        renderStudy();
+        // Small delay so user sees their selection, then auto-submit
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = setTimeout(() => studySubmit(), 100);
+    }
+}
+
+async function studySubmit() {
+    const key = currentIdx;
+    if (!userAnswers[key] || userAnswers[key].length === 0) return;
+    if (checkedAnswers[key]) return;  // already submitted
+    const origIdx = questionIndices[key];
+    const resp = await fetch(`/api/check/${origIdx}`);
+    const data = await resp.json();
+    checkedAnswers[key] = true;
+    checkedAnswers[key + '_ans'] = data.answer;
+    const uSorted = [...userAnswers[key]].sort().join('');
+    const cSorted = [...data.answer.replace(/\s/g,'')].sort().join('');
+    const isCorrect = uSorted === cSorted;
+    if (isCorrect) correctCount++;
+    else addToWrongBook(questions[key], uSorted, data.answer);
+    totalAnswered++;
+    document.getElementById('studyScore').textContent = `✅ ${correctCount} / ${totalAnswered}`;
+    updateProgress();
+    renderStudy();
+    // Auto-advance only on correct answer
+    if (isCorrect && currentIdx < questions.length - 1) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = setTimeout(() => {
+            currentIdx++;
+            renderStudy();
+            updateProgress();
+            window.scrollTo({top:0,behavior:"smooth"});
+        }, 600);
+    }
+}
+
+// ============ Test Mode ============
+async function loadTest() {
+    resetState();
+    const mode = document.getElementById('testFilter').value;
+    const resp = await fetch(`/api/test?mode=${mode}`);
+    const data = await resp.json();
+    questions = data.questions;
+    questionIndices = questions.map(q => q._idx);
+    document.getElementById('submitTestBtn').disabled = false;
+    document.getElementById('headerSub').textContent = `测试模式 · ${data.total} 题`;
+    document.getElementById('questionNav').style.display = 'flex';
+    if (questions.length === 0) {
+        document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>暂无题目</h2></div>';
+        document.getElementById('navButtons').style.display = 'none';
+        document.getElementById('questionNav').style.display = 'none';
+    } else {
+        renderTest(); renderNav();
+        document.getElementById('navButtons').style.display = 'flex';
+    }
+    updateProgress();
+}
+
+function renderTest() {
+    if (questions.length === 0) return;
+    const q = questions[currentIdx];
+    const key = currentIdx;
+    let optionsHtml = q.options.map((opt, oi) => {
+        const letter = String.fromCharCode(65 + oi);
+        const userAns = userAnswers[key] || [];
+        const isSelected = userAns.includes(letter);
+        return `<label class="option${isSelected?' selected':''}">
+            <input type="checkbox" value="${letter}" ${isSelected?'checked':''} onclick="testSelect(event,${oi})">
+            <span>${opt}</span>
+        </label>`;
+    }).join('');
+    document.getElementById('questionArea').innerHTML = `
+    <div class="card">
+        <div class="q-header"><span class="q-num">第 ${currentIdx+1} / ${questions.length} 题</span></div>
+        <div class="q-text">${q.question}</div>
+        <div class="options">${optionsHtml}</div>
+    </div>`;
+    renderNav();
+}
+
+function testSelect(event, oi) {
+    const key = currentIdx;
+    const letter = String.fromCharCode(65 + oi);
+    if (!userAnswers[key]) userAnswers[key] = [];
+    if (event.target.checked) { if (!userAnswers[key].includes(letter)) userAnswers[key].push(letter); }
+    else { userAnswers[key] = userAnswers[key].filter(l => l !== letter); }
+    renderNav(); updateProgress();
+}
+
+function renderNav() {
+    let html = '';
+    for (let i = 0; i < questions.length; i++) {
+        let cls = ''; if (i === currentIdx) cls += ' current';
+        if (userAnswers[i] && userAnswers[i].length > 0) cls += ' answered';
+        html += `<div class="q-dot${cls}" onclick="jumpTo(${i})">${i+1}</div>`;
+    }
+    document.getElementById('questionNav').innerHTML = html;
+}
+
+function jumpTo(idx) { currentIdx = idx; renderTest(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+async function submitTest() {
+    const answered = Object.keys(userAnswers).filter(k => userAnswers[k] && userAnswers[k].length > 0).length;
+    if (answered < questions.length) {
+        if (!confirm(`还有 ${questions.length - answered} 题未作答，确定交卷吗？`)) return;
+    }
+    document.getElementById('submitTestBtn').disabled = true;
+    document.getElementById('submitTestBtn').textContent = '⏳ 判卷中...';
+    const payload = { answers: {}, indices: questionIndices };
+    for (let i = 0; i < questions.length; i++) {
+        if (userAnswers[i] && userAnswers[i].length > 0) payload.answers[i] = userAnswers[i].sort().join('');
+    }
+    const resp = await fetch('/api/grade', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    testResult = await resp.json();
+    testResult.details.forEach(d => {
+        if (!d.is_correct) addToWrongBook({question:d.question, options:d.options}, d.user_answer, d.correct_answer);
+    });
+    document.getElementById('headerSub').textContent = `测试结果: ${testResult.correct}/${testResult.total} (${testResult.score}分)`;
+    showResult();
+}
+
+function showResult() {
+    if (!testResult) return;
+    const r = testResult;
+    const gradeColor = r.score >= 90 ? '#2e7d32' : r.score >= 60 ? '#e67e22' : '#c62828';
+    let reviewHtml = r.details.map((d, i) => `
+        <div class="review-item">
+            <div class="ri-q"><b>${i+1}.</b> ${d.question}</div>
+            <div class="ri-ans">
+                你的答案: <b>${d.user_answer || '未作答'}</b> &nbsp;|&nbsp;
+                正确答案: <b>${d.correct_answer}</b> &nbsp;
+                <span class="${d.is_correct ? 'ri-correct' : 'ri-wrong'}">${d.is_correct ? '✅' : '❌'}</span>
+            </div>
+        </div>`).join('');
+    document.getElementById('resultContent').innerHTML = `
+        <h2>📊 测试成绩</h2>
+        <div class="big-score" style="color:${gradeColor}">${r.score} 分</div>
+        <div class="score-label">${r.correct} / ${r.total} 题正确</div>
+        <div class="review-section">
+            <h3 style="margin-bottom:8px">📋 答题详情</h3>${reviewHtml}
+        </div>
+        <div class="btn-group" style="justify-content:center;margin-top:16px">
+            <button class="btn btn-primary" onclick="closeResult()">关闭</button>
+            <button class="btn btn-secondary" onclick="closeResult();loadTest();">🔄 再来一套</button>
+        </div>`;
+    document.getElementById('resultOverlay').classList.add('show');
+}
+
+function closeResult() {
+    document.getElementById('resultOverlay').classList.remove('show');
+    document.getElementById('submitTestBtn').disabled = false;
+    document.getElementById('submitTestBtn').textContent = '📮 交卷';
+}
+
+// ============ Wrong Book Mode ============
+function renderWrongBook() {
+    const wb = getWrongBook();
+    document.getElementById('wrongInfo').textContent = `共 ${wb.length} 道错题`;
+    document.getElementById('navButtons').style.display = 'none';
+    document.getElementById('progressBar').style.width = '0%';
+    if (wb.length === 0) {
+        document.getElementById('questionArea').innerHTML = '<div class="empty"><div class="big-emoji">🎉</div><h2>错题本为空</h2><p>继续刷题吧，答错的题会自动收录</p></div>';
+        return;
+    }
+    let html = '';
+    wb.forEach((w, i) => {
+        html += `<div class="wrong-card">
+            <button class="wrong-delete" onclick="removeFromWrongBook(${i})" title="移除">✕</button>
+            <div class="wrong-num">错题 #${i+1} · 错误 ${w.wrongCount||1} 次</div>
+            <div class="wrong-q">${w.question}</div>
+            <div class="wrong-info">✅ 正确答案：<b>${w.answer}</b></div>
+        </div>`;
+    });
+    document.getElementById('questionArea').innerHTML = html;
+}
+
+function retestWrong() {
+    const wb = getWrongBook();
+    if (wb.length === 0) { alert('错题本为空！'); return; }
+    resetState();
+    currentMode = 'test';
+    document.querySelectorAll('.mode-tab').forEach((t,i) => t.classList.toggle('active', i === 1));
+    ['studyControls','wrongControls'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('testControls').style.display = 'block';
+    document.getElementById('testFilter').value = 'all';
+    questions = wb.map(w => ({ question: w.question, options: w.options }));
+    fetch('/api/questions?mode=all&shuffle=0').then(r => r.json()).then(data => {
+        const allQs = data.questions;
+        const found = [];
+        wb.forEach(w => {
+            const match = allQs.find(aq => aq.question === w.question);
+            if (match) found.push(match);
+        });
+        questions = found.map(q => ({ question: q.question, options: q.options }));
+        questionIndices = found.map(q => q._idx);
+        document.getElementById('submitTestBtn').disabled = false;
+        document.getElementById('headerSub').textContent = `错题重刷 · ${found.length} 题`;
+        document.getElementById('questionNav').style.display = 'flex';
+        if (found.length === 0) {
+            document.getElementById('questionArea').innerHTML = '<div class="empty"><h2>无法匹配错题</h2></div>';
+            document.getElementById('navButtons').style.display = 'none';
+        } else {
+            renderTest(); renderNav();
+            document.getElementById('navButtons').style.display = 'flex';
+        }
+        updateProgress();
+    });
+}
+
+// ============ Navigation ============
+function nextQuestion() {
+    if (currentIdx < questions.length - 1) {
+        clearTimeout(autoAdvanceTimer);
+        currentIdx++;
+        if (currentMode === 'study') renderStudy(); else renderTest();
+        updateProgress(); window.scrollTo({top:0,behavior:'smooth'});
+    }
+}
+function prevQuestion() {
+    if (currentIdx > 0) {
+        clearTimeout(autoAdvanceTimer);
+        currentIdx--;
+        if (currentMode === 'study') renderStudy(); else renderTest();
+        updateProgress(); window.scrollTo({top:0,behavior:'smooth'});
+    }
+}
+function updateProgress() {
+    if (questions.length === 0) { document.getElementById('progressBar').style.width='0%'; return; }
+    let pct;
+    if (currentMode === 'study') pct = totalAnswered / questions.length * 100;
+    else { const a = Object.values(userAnswers).filter(v => v && v.length > 0).length; pct = a / questions.length * 100; }
+    document.getElementById('progressBar').style.width = pct + '%';
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); nextQuestion(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevQuestion(); }
+    if (e.key === 'Escape') closeResult();
+});
+
+updateWrongBadge();
+loadStudy();
+</script>
+</body>
+</html>

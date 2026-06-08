@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.tar.gz
+/tmp/
+/tmp_vps*
+/vps_pass*
+/webapp/__pycache__/
